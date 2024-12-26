@@ -43,26 +43,4 @@ public class SwaggerConfig {
 }
 
 
-/*
-@Configuration
-public class SwaggerConfig {
 
-    @Bean
-    public GroupedOpenApi publicApi() {
-        return GroupedOpenApi.builder()
-                .group("library-management")
-                .pathsToMatch("/api/books/**", "/api/borrowers/**")
-                .build();
-    }
-
-    @Bean
-    public io.swagger.v3.oas.models.OpenAPI customOpenAPI() {
-        return new io.swagger.v3.oas.models.OpenAPI()
-                .info(new Info()
-                        .title("Library Management System API")
-                        .version("1.0")
-                        .description("API documentation for the Library Management System")
-                        .contact(new Contact().name("Your Name").email("your.email@example.com"))
-                );
-    }
-}*/

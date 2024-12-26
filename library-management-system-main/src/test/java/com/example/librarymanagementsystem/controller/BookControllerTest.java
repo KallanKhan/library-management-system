@@ -1,90 +1,94 @@
 package com.example.librarymanagementsystem.controller;
 
-import com.library.management.controller.BookController;
-import com.library.management.dto.BookDTO;
-import com.library.management.service.BookService;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.library.management.controller.BookController;
+import com.library.management.dto.BookDTO;
+import com.library.management.entity.Book;
+import com.library.management.service.BookService;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-import org.springframework.data.domain.PageImpl;
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(BookController.class)
 class BookControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @MockBean
     private BookService bookService;
 
-    @InjectMocks
-    private BookController bookController;
-
-    private BookDTO mockBookDTO;
+    private BookDTO testBookDTO;
 
     @BeforeEach
     void setUp() {
-    	UUID bookId = UUID.fromString("9a82a2a7-7e5e-4be2-bc57-64773f8978e7");
-        mockBookDTO = new BookDTO(bookId, "1234567890", "Test Book", "Test Author");
+        testBookDTO = new BookDTO();
+        testBookDTO.setId(UUID.fromString("9a82a2a7-7e5e-4be2-bc57-64773f8978e7"));
+        testBookDTO.setTitle("Sample Book");
+        testBookDTO.setAuthor("John Doe");
+        testBookDTO.setIsbn("1234567890");
     }
 
     @Test
-    void testRegisterBook() {
-        // Mocking behavior of BookService
-        when(bookService.registerBook(any(BookDTO.class))).thenReturn(mockBookDTO);
+    void testGetAllBooks() throws Exception {
+        // Mock the service method
+        List<BookDTO> bookDTOList = Collections.singletonList(testBookDTO);
+        Page<BookDTO> bookPage = new PageImpl<>(bookDTOList);
+        Mockito.when(bookService.getAllBooks(Mockito.any(Pageable.class))).thenReturn(bookPage);
 
-        // Call the controller method
-        ResponseEntity<BookDTO> responseEntity = bookController.registerBook(mockBookDTO);
-
-        // Assertions
-        assertEquals(HttpStatus.CREATED, responseEntity.getStatusCode());
-        assertEquals(mockBookDTO, responseEntity.getBody());
+        // Perform GET request
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/books")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.content[0].id").value(testBookDTO.getId().toString()))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.content[0].title").value(testBookDTO.getTitle()))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.content[0].author").value(testBookDTO.getAuthor()))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.content[0].isbn").value(testBookDTO.getIsbn()));
     }
 
     @Test
-    void testGetAllBooks() {
+    void testRegisterBook() throws Exception {
         // Mocking behavior of BookService
-    /*    List<BookDTO> mockBooks = Collections.singletonList(mockBookDTO);
-        when(bookService.getAllBooks()).thenReturn(mockBooks);
+        when(bookService.registerBook(any(BookDTO.class))).thenReturn(testBookDTO);
 
-        // Call the controller method
-        ResponseEntity<List<BookDTO>> responseEntity = bookController.getAllBooks();
-
-        // Assertions
-        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-        assertEquals(mockBooks, responseEntity.getBody());
-        */
-        ////
-        
-        // Create mock data
-        BookDTO mockBookDTO = new BookDTO(UUID.randomUUID(), "1234567890", "Test Book", "Test Author");
-        List<BookDTO> mockBooks = Collections.singletonList(mockBookDTO);
-
-        // Mock Pageable to simulate pagination
-        Pageable pageable = PageRequest.of(0, 10);  // First page with 10 items
-
-     // Wrap the mockBooks in a Page using PageImpl
-        Page<BookDTO> mockPage = new PageImpl<>(mockBooks, pageable, mockBooks.size());
-
-        // Mock the service method to return a page of books
-        when(bookService.getAllBooks(pageable)).thenReturn(mockPage);
-
-        // Call the controller method
-      
-
-     
+        // Perform POST request to the controller
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/books")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(testBookDTO)))
+                .andExpect(MockMvcResultMatchers.status().isCreated()) // Expecting HTTP 201 Created
+                .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(testBookDTO.getId().toString()))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.title").value(testBookDTO.getTitle()))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.author").value(testBookDTO.getAuthor()))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.isbn").value(testBookDTO.getIsbn()));
     }
+
+
 }

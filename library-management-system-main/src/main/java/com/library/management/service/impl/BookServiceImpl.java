@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -41,11 +41,18 @@ public class BookServiceImpl implements BookService{
     @Autowired
     private BorrowRecordRepository borrowRecordRepository;
 
-    // Get all books with pagination
-    public Page<Book> getAllBooks(int page, int size) {
-        logger.debug("Fetching all books with pagination, page: {}, size: {}", page, size);
-        return bookRepository.findAll(PageRequest.of(page, size));
+    @Override
+    public Page<BookDTO> getAllBooks(Pageable pageable) {
+        Page<Book> books = bookRepository.findAll(pageable);
+
+        // Convert Page<Book> to Page<BookDTO>
+        List<BookDTO> bookDTOs = books.stream()
+                .map(book -> new BookDTO(book.getId(), book.getIsbn(), book.getTitle(), book.getAuthor()))
+                .toList();
+
+        return new PageImpl<>(bookDTOs, pageable, books.getTotalElements());
     }
+
 
     // Register book using ISBN for validation
     @Override
@@ -87,12 +94,6 @@ public class BookServiceImpl implements BookService{
 
         logger.info("Book with ID: {} successfully borrowed by borrower: {}", bookId, borrowerId);
     }
-
-	@Override
-	public Page<BookDTO> getAllBooks(Pageable pageable) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	@Override
 	public BookDTO getBookById(UUID bookId) {

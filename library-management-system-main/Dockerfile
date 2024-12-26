@@ -1,5 +1,5 @@
 # Stage 1: Build Stage
-FROM maven:3.8.4-openjdk-17-slim AS build
+FROM maven:3.9.4-openjdk-17-slim AS build
 WORKDIR /app
 
 # Copy Maven dependencies file and download dependencies

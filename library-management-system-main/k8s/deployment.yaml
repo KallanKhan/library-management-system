@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: library-management-system
-        image: thilina01/library-management-system:latest
+        image: KallanKhan/library-management-system:latest
         ports:
         - containerPort: 8080
         env:
